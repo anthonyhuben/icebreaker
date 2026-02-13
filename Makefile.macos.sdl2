@@ -1,0 +1,147 @@
+#!/usr/bin/env make
+# IceBreaker - macOS build configuration (SDL 2.0 version)
+# Builds IceBreaker for macOS using SDL 2.0
+
+CC=clang
+PKG_CONFIG ?= pkg-config
+
+VERSION := 2.2.2
+VERSIONSTRING := $(VERSION)
+APP_NAME=IceBreaker
+BUNDLE_NAME=$(APP_NAME).app
+BUNDLE_IDENTIFIER=org.mattdm.icebreaker
+BUNDLE_VERSION=$(VERSIONSTRING)
+
+CONTENTS_DIR=$(BUNDLE_NAME)/Contents
+MACOS_DIR=$(CONTENTS_DIR)/MacOS
+RESOURCES_DIR=$(CONTENTS_DIR)/Resources
+DMG_NAME=icebreaker-$(VERSION).dmg
+
+SRC=icebreaker.c cursor.c grid.c laundry.c line.c penguin.c sound.c \
+    level.c intro.c text.c status.c transition.c hiscore.c dialog.c \
+    menu.c options.c fullscreen.c themes.c event.c titlebar.c benchmark.c \
+    misc.c lock.c delay.c
+
+SDL_CFLAGS := $(shell $(PKG_CONFIG) sdl2 --cflags)
+SDL_LDFLAGS := $(shell $(PKG_CONFIG) sdl2 --libs)
+SDL_MIXER := $(shell $(PKG_CONFIG) SDL2_mixer --libs)
+
+CFLAGS=-Wall $(SDL_CFLAGS) -DDATAPREFIX=\"/Applications/$(BUNDLE_NAME)/Contents/Resources\" -DHISCOREPREFIX=\"$$HOME/.icebreaker\"
+LDFLAGS=$(SDL_MIXER) $(SDL_LDFLAGS)
+
+.PHONY: all clean dmg install help
+
+all: $(BUNDLE_NAME)
+
+$(BUNDLE_NAME): $(MACOS_DIR)/icebreaker
+	@echo "✓ macOS app bundle created: $(BUNDLE_NAME)"
+
+$(MACOS_DIR)/icebreaker: $(MACOS_DIR) $(RESOURCES_DIR) $(SRC:.c=.o) create-plist create-resources
+	@mkdir -p $(MACOS_DIR)
+	$(CC) $(CFLAGS) $(SRC:.c=.o) -o $@ $(LDFLAGS)
+	@chmod +x $@
+	@echo "✓ Executable built: $@"
+
+$(MACOS_DIR):
+	@mkdir -p $(MACOS_DIR)
+
+$(RESOURCES_DIR):
+	@mkdir -p $(RESOURCES_DIR)
+
+.PHONY: create-plist
+create-plist: $(CONTENTS_DIR)/Info.plist
+
+$(CONTENTS_DIR)/Info.plist:
+	@mkdir -p $(CONTENTS_DIR)
+	@echo "Creating Info.plist..."
+	@echo '<?xml version="1.0" encoding="UTF-8"?>' > $@
+	@echo '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' >> $@
+	@echo '<plist version="1.0">' >> $@
+	@echo '<dict>' >> $@
+	@echo '	<key>CFBundleDevelopmentRegion</key>' >> $@
+	@echo '	<string>en</string>' >> $@
+	@echo '	<key>CFBundleExecutable</key>' >> $@
+	@echo '	<string>icebreaker</string>' >> $@
+	@echo '	<key>CFBundleIdentifier</key>' >> $@
+	@echo '	<string>org.mattdm.icebreaker</string>' >> $@
+	@echo '	<key>CFBundleInfoDictionaryVersion</key>' >> $@
+	@echo '	<string>6.0</string>' >> $@
+	@echo '	<key>CFBundleName</key>' >> $@
+	@echo '	<string>IceBreaker</string>' >> $@
+	@echo '	<key>CFBundlePackageType</key>' >> $@
+	@echo '	<string>APPL</string>' >> $@
+	@echo '	<key>CFBundleShortVersionString</key>' >> $@
+	@echo '	<string>2.2.2</string>' >> $@
+	@echo '	<key>CFBundleVersion</key>' >> $@
+	@echo '	<string>2.2.2</string>' >> $@
+	@echo '	<key>LSMinimumSystemVersion</key>' >> $@
+	@echo '	<string>10.7</string>' >> $@
+	@echo '	<key>NSHighResolutionCapable</key>' >> $@
+	@echo '	<true/>' >> $@
+	@echo '	<key>NSHumanReadableCopyright</key>' >> $@
+	@echo '	<string>Copyright © 2000-2021 Matthew Miller and contributors. Licensed under GPLv2+.</string>' >> $@
+	@echo '	<key>NSPrincipalClass</key>' >> $@
+	@echo '	<string>NSApplication</string>' >> $@
+	@echo '</dict>' >> $@
+	@echo '</plist>' >> $@
+	@echo "✓ Info.plist created"
+
+.PHONY: create-resources
+create-resources: $(RESOURCES_DIR)
+	@mkdir -p $(RESOURCES_DIR)
+	@echo "Copying resources..."
+	@cp -v *.ibt $(RESOURCES_DIR)/ 2>/dev/null || true
+	@cp -v *.bmp $(RESOURCES_DIR)/ 2>/dev/null || true
+	@cp -v *.png $(RESOURCES_DIR)/ 2>/dev/null || true
+	@cp -v *.wav $(RESOURCES_DIR)/ 2>/dev/null || true
+	@cp -v README* $(RESOURCES_DIR)/ 2>/dev/null || true
+	@cp -v LICENSE $(RESOURCES_DIR)/ 2>/dev/null || true
+	@cp -v ChangeLog $(RESOURCES_DIR)/ 2>/dev/null || true
+	@echo "✓ Resources copied to bundle"
+
+dmg: $(DMG_NAME)
+
+$(DMG_NAME): $(BUNDLE_NAME)
+	@echo "Creating DMG installer..."
+	@hdiutil create -volname "$(APP_NAME) $(BUNDLE_VERSION)" \
+		-srcfolder $(BUNDLE_NAME) \
+		-ov -format UDZO \
+		-imagekey zlib-level=9 \
+		-o $@
+	@echo "✓ DMG created: $@"
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+%.d: %.c
+	set -e; $(CC) -M $(CFLAGS) $< | sed 's/\($*\)\.o[ :]*/\1.o $@ : /g' > $@; [ -s $@ ] || rm -f $@
+
+-include $(SRC:.c=.d)
+
+clean:
+	@echo "Cleaning build artifacts..."
+	@rm -rf $(BUNDLE_NAME)
+	@rm -f *.o *.d
+	@rm -f $(DMG_NAME)
+	@echo "✓ Clean complete"
+
+install: $(BUNDLE_NAME)
+	@echo "Installing $(BUNDLE_NAME) to /Applications..."
+	@sudo cp -r $(BUNDLE_NAME) /Applications/
+	@echo "✓ Installation complete. You can now run the app from /Applications."
+
+help:
+	@echo "IceBreaker macOS Build System (SDL 2.0)"
+	@echo "========================================"
+	@echo ""
+	@echo "Available targets:"
+	@echo "  all      - Build the macOS application bundle (default)"
+	@echo "  dmg      - Create a .dmg installer file"
+	@echo "  install  - Install the app bundle to /Applications (requires sudo)"
+	@echo "  clean    - Remove all build artifacts"
+	@echo "  help     - Show this help message"
+	@echo ""
+	@echo "Examples:"
+	@echo "  make -f Makefile.macos.sdl2                 # Build the app"
+	@echo "  make -f Makefile.macos.sdl2 dmg             # Create icebreaker-2.2.2.dmg"
+	@echo "  make -f Makefile.macos.sdl2 install         # Install to /Applications"

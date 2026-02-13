@@ -1,0 +1,226 @@
+================================================================================
+IceBreaker macOS Build System - Complete Setup Guide
+================================================================================
+
+OVERVIEW
+--------
+This package now includes everything needed to build IceBreaker as a native
+macOS application and create distributable .dmg installer files.
+
+NEW FILES CREATED
+-----------------
+1. Makefile.macos           - Primary macOS build configuration
+2. build-macos.sh           - Complete build + DMG creation script
+3. setup-macos.sh           - Development environment setup
+4. create-dmg.sh            - DMG creation utility
+5. sign-and-notarize.sh     - Code signing helper
+6. verify-build.sh          - Build verification tool
+7. README.macos             - Comprehensive documentation
+8. MACOS_BUILD.md           - Quick reference guide
+9. MACOS_SETUP_SUMMARY.txt  - This file
+
+
+QUICK START (5 MINUTES)
+-----------------------
+
+First Time Only (install dependencies):
+    cd /Users/anthonyh/(apps)/IceBreaker
+    ./setup-macos.sh
+
+Build the App and Create DMG:
+    ./build-macos.sh
+
+Done! You now have:
+    - IceBreaker.app        (the game - double-click to run)
+    - icebreaker-2.2.2.dmg  (installer for distribution)
+
+
+WHAT YOU CAN NOW DO
+-------------------
+
+✓ Build a native macOS application bundle (IceBreaker.app)
+✓ Create a professional .dmg installer file for distribution
+✓ Automatically handle all game resources (graphics, sounds, themes)
+✓ Install to /Applications folder
+✓ Sign the application for distribution
+✓ Verify build integrity
+✓ Deploy on macOS 10.7+
+
+
+DIRECTORY OF SCRIPTS
+--------------------
+
+build-macos.sh          Primary build script
+                        Usage: ./build-macos.sh
+                        Creates: IceBreaker.app + icebreaker-2.2.2.dmg
+                        Best for: Complete build in one command
+
+setup-macos.sh          Development environment setup
+                        Usage: ./setup-macos.sh
+                        Installs: Xcode tools, Homebrew, SDL libraries
+                        Run once before first build
+
+create-dmg.sh           Standalone DMG creator
+                        Usage: ./create-dmg.sh
+                        Requires: IceBreaker.app already built
+                        Best for: Rebuilding DMG from existing bundle
+
+sign-and-notarize.sh    Code signing utility
+                        Usage: ./sign-and-notarize.sh
+                        Provides: Menu-driven signing options
+                        For: Ad-hoc or developer certificate signing
+
+verify-build.sh         Build verification tool
+                        Usage: ./verify-build.sh
+                        Checks: Bundle structure, resources, files
+                        Best for: Validating successful build
+
+
+MANUAL BUILD STEPS
+------------------
+
+If you prefer fine-grained control:
+
+    # Setup (one time)
+    ./setup-macos.sh
+
+    # Build the app
+    make -f Makefile.macos
+
+    # Verify the build
+    ./verify-build.sh
+
+    # Create DMG installer
+    make -f Makefile.macos dmg
+
+    # Or use the dedicated script
+    ./create-dmg.sh
+
+    # Test the app
+    open IceBreaker.app
+
+    # Install to Applications (optional)
+    make -f Makefile.macos install
+
+
+DISTRIBUTION
+------------
+
+For end users to install:
+
+1. Download: icebreaker-2.2.2.dmg
+2. Double-click the DMG file
+3. Drag IceBreaker.app to Applications folder
+4. Eject the DMG
+5. Launch from Applications
+
+Simple as that!
+
+
+SYSTEM REQUIREMENTS
+-------------------
+
+Build Requirements:
+    • macOS 10.7 or later
+    • Xcode Command Line Tools (or full Xcode)
+    • Homebrew package manager
+    • SDL 1.2 and SDL_mixer libraries
+
+Runtime Requirements:
+    • macOS 10.7 or later
+    • X11 (usually pre-installed)
+
+
+FEATURES OF THE BUILD SYSTEM
+-----------------------------
+
+✓ Automatic resource bundling (graphics, sounds, themes)
+✓ Professional app bundle structure
+✓ macOS 10.7+ compatibility
+✓ Built-in code signing support
+✓ DMG creation with compression
+✓ Configuration storage in ~/.icebreaker
+✓ Proper macOS application manifest (Info.plist)
+✓ High-resolution display support
+
+
+TROUBLESHOOTING QUICK REFERENCE
+-------------------------------
+
+Problem: "SDL not found"
+Solution: ./setup-macos.sh
+          (or: brew install sdl@1.2 sdl_mixer)
+
+Problem: "command not found: make"
+Solution: xcode-select --install
+
+Problem: App won't launch on another Mac
+Solution: ./sign-and-notarize.sh (choose option 1)
+
+Problem: "Can't be opened - Apple cannot check it"
+Solution: Right-click app, click Open, then click Open in dialog
+          OR: ./sign-and-notarize.sh (choose option 1)
+
+For more help, see README.macos
+
+
+NEXT STEPS
+----------
+
+1. Run the setup script (one time):
+   ./setup-macos.sh
+
+2. Build the game:
+   ./build-macos.sh
+
+3. Test it:
+   open IceBreaker.app
+
+4. Share the DMG:
+   icebreaker-2.2.2.dmg is ready to distribute!
+
+5. (Optional) Sign for security:
+   ./sign-and-notarize.sh
+
+
+DETAILED DOCUMENTATION
+----------------------
+
+For comprehensive information, see:
+    • README.macos      - Full build and distribution guide
+    • MACOS_BUILD.md    - Quick reference with all options
+    • Makefile.macos    - Build system details
+
+
+SUPPORT & DOCUMENTATION LINKS
+------------------------------
+
+Original Project:       http://www.mattdm.org/icebreaker/
+SDL Documentation:      https://www.libsdl.org/
+Apple macOS Bundles:    https://developer.apple.com/library/archive/documentation/CoreFoundation/Conceptual/CFBundles/
+Code Signing Guide:     https://developer.apple.com/library/archive/documentation/Security/Conceptual/CodeSigningGuide/
+
+
+VERSION INFORMATION
+-------------------
+
+IceBreaker Version:     2.2.2
+Build System:           macOS Makefile.macos
+Compatibility:          macOS 10.7 (Lion) through Sequoia (15)
+Created:                February 2025
+
+
+SUMMARY
+-------
+
+This build system makes it easy to:
+  ✓ Build IceBreaker for macOS
+  ✓ Create professional DMG installers
+  ✓ Sign and distribute the application
+  ✓ Support all modern macOS versions
+
+Just run: ./build-macos.sh
+
+Your game is ready to go!
+
+================================================================================

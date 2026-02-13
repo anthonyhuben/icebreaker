@@ -79,8 +79,6 @@
 
 #ifdef __MACOSX__
 
-  #error "Mac OS probably doesn't actually work yet -- help wanted."
-
   #define ONEBUTTONMICEARESILLY
 
   // HISCOREPREFIX and DATAPREFIX should probably be ".". Set in Makefile.osx
@@ -130,8 +128,10 @@
 /************************************************************************/
 /* Changing these will significantly affect game play. */
 
-#define BLOCKWIDTH 14
-#define BLOCKHEIGHT 14
+#define SCALE 2  // Scale factor for window size (1=original, 2=double size, 3=triple size)
+
+#define BLOCKWIDTH (14*SCALE)
+#define BLOCKHEIGHT (14*SCALE)
 
 #define COLS 32
 #define ROWS 20
@@ -139,10 +139,10 @@
 #define PLAYWIDTH (COLS*BLOCKWIDTH)
 #define PLAYHEIGHT (ROWS*BLOCKHEIGHT)
 
-#define MARGINTOP 39
-#define MARGINBOTTOM 38
-#define MARGINLEFT 26
-#define MARGINRIGHT 26
+#define MARGINTOP (39*SCALE)
+#define MARGINBOTTOM (38*SCALE)
+#define MARGINLEFT (26*SCALE)
+#define MARGINRIGHT (26*SCALE)
 
 #define FULLWIDTH 1920
 #define FULLHEIGHT 1080

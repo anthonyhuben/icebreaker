@@ -36,6 +36,7 @@ typedef struct
 	GameDifficultyType difficulty;
 	FullscreenSettingType fullscreen;
         char theme[11+MAXTHEMENAMELENGTH];
+	int windowscale;
 } GameOptionsType;
 
 typedef struct

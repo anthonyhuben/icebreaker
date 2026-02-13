@@ -1,0 +1,307 @@
+# IceBreaker for macOS
+
+This document explains how to build and distribute IceBreaker on macOS, including creating a distributable .dmg file.
+
+## Quick Start
+
+### Build the App Bundle
+
+The easiest way to build is using the provided script:
+
+```bash
+./build-macos.sh
+```
+
+Or manually using make:
+
+```bash
+make -f Makefile.macos
+```
+
+This creates `IceBreaker.app`, a standard macOS application bundle.
+
+### Create a DMG Installer
+
+To create a distributable `.dmg` file:
+
+```bash
+./build-macos.sh              # Does everything including DMG creation
+# OR
+make -f Makefile.macos dmg    # Just create the DMG
+```
+
+This generates `icebreaker-VERSION.dmg` that users can download, open, and drag IceBreaker.app to their Applications folder.
+
+### Install to Applications Folder
+
+To install the built application to your Applications folder:
+
+```bash
+make -f Makefile.macos install
+```
+
+This requires your password (sudo) to copy the bundle to `/Applications`.
+
+## Requirements
+
+### Build Requirements
+
+- **Xcode Command Line Tools**: Install with `xcode-select --install`
+- **Homebrew**: Install from https://brew.sh
+- **SDL 1.2**: `brew install sdl sdl_mixer`
+
+### Optional (for code signing)
+
+```bash
+# Ad-hoc signing for local testing
+codesign --deep --force --verify --verbose --sign - IceBreaker.app
+
+# Notarization (for distribution on macOS 10.15+)
+# Requires a valid Apple Developer Certificate
+```
+
+## Installation Instructions
+
+### For Users (Using DMG)
+
+1. Download `icebreaker-VERSION.dmg`
+2. Double-click to open the DMG
+3. Drag `IceBreaker.app` to the Applications folder
+4. Eject the DMG
+5. Find IceBreaker in Applications and run it
+
+### For Developers (Building Locally)
+
+```bash
+# Build and install in one command
+make -f Makefile.macos install
+
+# Or just build the bundle and run it
+make -f Makefile.macos
+open IceBreaker.app
+```
+
+## Build System Details
+
+### Makefile Targets
+
+- `make -f Makefile.macos` - Build the application bundle (default)
+- `make -f Makefile.macos dmg` - Create a .dmg installer
+- `make -f Makefile.macos install` - Install to /Applications
+- `make -f Makefile.macos clean` - Remove build artifacts
+
+### Directory Structure
+
+```
+IceBreaker.app/
+├── Contents/
+│   ├── MacOS/
+│   │   └── icebreaker          # Executable
+│   ├── Resources/              # Game data
+│   │   ├── *.ibt (themes)
+│   │   ├── *.bmp (images)
+│   │   ├── *.png (images)
+│   │   ├── *.wav (sounds)
+│   │   ├── README
+│   │   ├── LICENSE
+│   │   └── ChangeLog
+│   └── Info.plist              # Bundle metadata
+```
+
+### Resource Storage
+
+- Game resources (themes, images, sounds) are stored in the `IceBreaker.app/Contents/Resources` directory
+- Configuration and high scores are stored in `~/.icebreaker`
+
+## macOS Compatibility
+
+The build is configured for macOS 10.7 (Lion) and later, though it will work on modern versions:
+
+- ✓ macOS 10.7+
+- ✓ macOS 11 (Big Sur) - ARM64 support requires SDL 1.2.15+
+- ✓ macOS 12-15 (Monterey through Sequoia)
+
+### ARM64 (Apple Silicon)
+
+For native ARM64 support on Apple Silicon Macs:
+
+```bash
+# Build for ARM64
+CFLAGS="-arch arm64" make -f Makefile.macos clean
+make -f Makefile.macos
+
+# Or use Homebrew's arm64 SDL
+brew install sdl@1.2 sdl_mixer
+```
+
+### Universal Binary (Intel + Apple Silicon)
+
+To create a universal binary:
+
+```bash
+# Build for both Intel and ARM64
+CFLAGS="-arch x86_64 -arch arm64" make -f Makefile.macos
+```
+
+## Distribution
+
+### Step-by-Step Distribution Guide
+
+1. **Build the DMG**
+   ```bash
+   ./build-macos.sh
+   ```
+
+2. **Test the DMG**
+   ```bash
+   # On a different Mac or user account if possible
+   open icebreaker-VERSION.dmg
+   ```
+
+3. **Sign the App (Recommended)**
+   ```bash
+   # Ad-hoc signing (self-signed)
+   codesign --deep --force --verify --verbose --sign - IceBreaker.app
+
+   # Recreate DMG after signing
+   make -f Makefile.macos dmg
+   ```
+
+4. **Notarize (Required for macOS 10.15+)**
+
+   Notarization requires an Apple Developer account:
+
+   ```bash
+   # Sign with your certificate
+   codesign --force --verify --verbose --sign "Developer ID Application" IceBreaker.app
+
+   # Create zip for notarization
+   ditto -c -k --keepParent IceBreaker.app icebreaker-notarize.zip
+
+   # Submit for notarization
+   xcrun altool --notarize-app \
+     --file icebreaker-notarize.zip \
+     --primary-bundle-id org.mattdm.icebreaker \
+     -u your-apple-id@example.com \
+     -p your-app-password
+
+   # Wait for notarization to complete, then staple
+   xcrun stapler staple IceBreaker.app
+   ```
+
+5. **Host the DMG**
+   Upload `icebreaker-VERSION.dmg` to your download server
+
+## Troubleshooting
+
+### Build Fails with SDL Not Found
+
+```bash
+# Install SDL and development files
+brew install sdl sdl_mixer
+
+# Verify installation
+pkg-config --modversion sdl
+pkg-config --modversion SDL_mixer
+```
+
+### "IceBreaker.app" Can't Be Opened
+
+This usually means:
+1. The app isn't signed (run codesign command above)
+2. macOS Gatekeeper is blocking it (right-click, open, confirm)
+3. The app crashed (check console logs below)
+
+### App Crashes
+
+Check the system console for error messages:
+
+```bash
+# View recent crashes
+log stream --predicate 'process == "icebreaker"' --level debug
+```
+
+### DMG Creation Fails
+
+Ensure `hdiutil` is available (built-in on macOS):
+
+```bash
+which hdiutil
+
+# If missing, this is a serious system issue and requires
+# macOS reinstallation or repair
+```
+
+## Advanced Usage
+
+### Custom Build Options
+
+```bash
+# Build with debug symbols
+DEBUG=1 make -f Makefile.macos
+
+# Specify SDK version
+SDK=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk \
+  make -f Makefile.macos
+
+# Custom resource directory
+make -f Makefile.macos \
+  DATAPREFIX="/custom/path/to/resources"
+```
+
+### Bundle Customization
+
+Edit the Info.plist in the bundle after building:
+
+```bash
+# Edit the bundle metadata
+open IceBreaker.app/Contents/Info.plist
+```
+
+### Creating a Signed DMG
+
+For production distribution, create a signed .dmg:
+
+```bash
+# After codesigning the app
+hdiutil create \
+  -volname "IceBreaker 2.2.2" \
+  -srcfolder IceBreaker.app \
+  -ov -format UDZO \
+  -imagekey zlib-level=9 \
+  -signingIdentity "Developer ID Application: Your Name" \
+  -o icebreaker-signed.dmg
+```
+
+## Platform-Specific Notes
+
+### macOS 10.7-10.9 (Legacy)
+
+Works but you may need to compile SDL from source if Homebrew no longer provides binaries for these versions.
+
+### macOS 10.13 (High Sierra)
+
+Confirmed working. No special configuration needed.
+
+### macOS 11+ (Big Sur and Later)
+
+Works natively on Intel Macs. For Apple Silicon (M1/M2/M3):
+- Ensure SDL is built for arm64
+- Use universal binary approach if needed
+
+### macOS Ventura and Sequoia (13+)
+
+Works perfectly. The app appears in Finder as a native application and can be easily distributed via DMG.
+
+## Related Documentation
+
+- SDL Documentation: https://www.libsdl.org/
+- Apple macOS App Bundle Format: https://developer.apple.com/library/archive/documentation/CoreFoundation/Conceptual/CFBundles/
+- Code Signing Guide: https://developer.apple.com/library/archive/documentation/Security/Conceptual/CodeSigningGuide/
+- Notarization Overview: https://developer.apple.com/documentation/xcode/notarizing_macos_software_before_distribution
+
+## Getting Help
+
+- GitHub Issues: https://github.com/mattdm/icebreaker-game
+- Original Site: http://www.mattdm.org/icebreaker/
+- Email: mattdm@mattdm.org

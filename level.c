@@ -240,7 +240,10 @@ LevelExitType playlevel(int level, long oldscore, ScoreSheet * levelscore)
 			}
 			else if (event.type == SDL_MOUSEBUTTONDOWN)
 			{
-				if (event.button.button==1) //left
+				// Check for Ctrl+Click (macOS right-click equivalent)
+				int isrightclick = (event.button.button != 1) || (SDL_GetModState() & KMOD_CTRL);
+
+				if (event.button.button==1 && !(SDL_GetModState() & KMOD_CTRL)) //left click without Ctrl
 				{
 					// in game area?
 					if (event.button.x>BORDERLEFT && event.button.x<BORDERRIGHT && event.button.y>BORDERTOP && event.button.y<BORDERBOTTOM)
@@ -252,7 +255,7 @@ LevelExitType playlevel(int level, long oldscore, ScoreSheet * levelscore)
 						menubuttonpressed=true;
 					}
 				}
-  				else //middle or right
+  				else if (isrightclick) //middle, right, or Ctrl+left click
   				{
   					levelaction_switchclick(&linetype);
 				}

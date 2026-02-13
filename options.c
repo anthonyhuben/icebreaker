@@ -80,6 +80,7 @@ int writeoptionline(OPTFILEHANDLER *f,char* format,...);
 #define FLAGLISTTHEMESLONG "--listthemes"
 #define FLAGBENCHMARK      "-b"
 #define FLAGBENCHMARKLONG  "--benchmark"
+#define FLAGSCALE          "--scale"
 
 void setdefaultoptions(void)
 {
@@ -232,10 +233,11 @@ int parsecommandline(int argc, char** argv)
 	int i;
 
 	commandline.sound=SOUNDON;
-	commandline.autopause=AUTOPAUSEOFF;	
+	commandline.autopause=AUTOPAUSEOFF;
 	commandline.difficulty=NORMAL;
 	commandline.fullscreen=FULLSCREENUNKNOWN;
 	*(commandline.theme)='\0'; // makes this ""
+	commandline.windowscale=0;  // 0 means use default
 
 	if ( findflag(argc,argv,FLAGVERSION) || findflag(argc,argv,FLAGVERSIONLONG) ) 
 	{
@@ -342,7 +344,24 @@ int parsecommandline(int argc, char** argv)
 			               " then the name of the theme you want. Like, \"" FLAGTHEMELONG "=linux\". Otherwise, I\n"
 	               	               " will pretend to not understand you.\n");
 		}
-	
+
+	// parse scale parameter
+	for(i=1; i<argc; i++)
+	{
+		if (strncmp(argv[i],FLAGSCALE "=",strlen(FLAGSCALE "=")) == 0)
+		{
+			char *scalestr = argv[i] + strlen(FLAGSCALE "=");
+			int scale = atoi(scalestr);
+			if (scale == 2 || scale == 3)
+			{
+				commandline.windowscale = scale;
+			}
+			else
+			{
+				fprintf(stderr,"Warning: scale must be 2 or 3 (default is 2). Ignoring invalid value '%s'.\n", scalestr);
+			}
+		}
+	}
 
 	}
 
@@ -388,6 +407,7 @@ void printhelp()
 	printf("%20s, %-15s %-35s\n",FLAGLISTTHEMES,FLAGLISTTHEMESLONG,"list available themes");
 	printf("%18s%s,\n","",FLAGTHEME "themename");
 	printf("%18s %-18s %-35s\n","",FLAGTHEMELONG "=themename","select theme");
+	printf("%18s %-18s %-35s\n","",FLAGSCALE "=N","set window scale (2=double, 3=triple; default is 2)");
 
 	printf("\nFor game play help, see the included documentation, the in-game help, or the\n"
 	       "web site at <http://www.mattdm.org/icebreaker/>\n\n");
